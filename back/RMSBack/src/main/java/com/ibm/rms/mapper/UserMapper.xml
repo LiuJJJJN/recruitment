@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.UserMapper">
+    <sql id="Base_Column_List">
+        id, username, password, name, sign_in_date, email, status, dept_id
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID
+            (id)
+            as id, username, password, name, sign_in_date, email, status, BIN_TO_UUID(dept_id) as dept_id
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.User">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_user
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectRoleById" parameterType="String" resultType="java.lang.String">
+        select t_role.name
+        from t_user
+                 left join t_user_role on t_user.id = t_user_role.user_id
+                 left join t_role on t_user_role.role_id = t_role.id
+        where t_user.id = UUID_TO_BIN(#{id});
+    </select>
+    <resultMap id="userVoMap" type="com.ibm.rms.pojo.vo.UserVo">
+        <result column="id" property="id"/>
+        <collection javaType="List" ofType="string" property="roleList"
+                    select="selectRoleListStringById" column="id"/>
+    </resultMap>
+    <select id="selectAllByPageCondition" resultType="com.ibm.rms.pojo.vo.UserVo" resultMap="userVoMap">
+        select BIN_TO_UUID(u.id) as id,
+        username,
+        password,
+        u.name as name,
+        sign_in_date,
+        email,
+        status,
+        d.name as dept,
+        d.company as company
+        from t_user u
+        left join t_department d on d.id = u.dept_id
+        <where>
+            <if test="username != null and username != ''">
+                username like '%' #{username} '%'
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like '%' #{name} '%'
+            </if>
+            <if test="company != null and company != ''">
+                and d.company like '%' #{company} '%'
+            </if>
+            <if test="dept != null and dept != ''">
+                and d.name like '%' #{dept} '%'
+            </if>
+        </where>
+        limit #{pageNo}, #{pageSize}
+    </select>
+    <select id="selectRoleListStringById" resultType="string">
+        select concat(upper(substr(r.name, 6, 1)), substr(r.name, 7))
+        from t_user u
+                 left join t_user_role ur on u.id = ur.user_id
+                 left join t_role r on ur.role_id = r.id
+        where u.id = UUID_TO_BIN(#{id})
+        order by r.name desc
+    </select>
+    <select id="selectTotalSizeByPageCondition" resultType="java.lang.Long">
+        select
+        count(*)
+        from t_user u
+        left join t_department d on d.id = u.dept_id
+        <where>
+            <if test="username != null and username != ''">
+                username like '%' #{username} '%'
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like '%' #{name} '%'
+            </if>
+            <if test="company != null and company != ''">
+                and d.company like '%' #{company} '%'
+            </if>
+            <if test="dept != null and dept != ''">
+                and d.name like '%' #{dept} '%'
+            </if>
+        </where>
+    </select>
+    <select id="selectUUID" resultType="java.lang.String">
+        select BIN_TO_UUID(UUID_TO_BIN(UUID(), true))
+    </select>
+    <resultMap id="userVoMap2RoleId" type="com.ibm.rms.pojo.vo.UserVo">
+        <result column="id" property="id"/>
+        <collection javaType="List" ofType="string" property="roleList"
+                    select="selectRoleIdListById" column="id"/>
+    </resultMap>
+    <select id="selectUserVoById" resultType="com.ibm.rms.pojo.vo.UserVo" resultMap="userVoMap2RoleId">
+        select BIN_TO_UUID(u.id) as id,
+               username,
+               password,
+               u.name            as name,
+               sign_in_date,
+               email,
+               status,
+               BIN_TO_UUID(d.id) as dept
+        from t_user u
+                 left join t_department d on d.id = u.dept_id
+        where u.id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectRoleIdListById" resultType="string">
+        select BIN_TO_UUID(r.id)
+        from t_user u
+                 left join t_user_role ur on u.id = ur.user_id
+                 left join t_role r on ur.role_id = r.id
+        where u.id = UUID_TO_BIN(#{id})
+        order by r.name desc
+    </select>
+    <select id="selectUserVoByRole" resultType="com.ibm.rms.pojo.vo.UserVo" resultMap="userVoMap">
+        select BIN_TO_UUID(u.id) as id,
+               username,
+               password,
+               u.name            as name,
+               sign_in_date,
+               email,
+               status,
+               BIN_TO_UUID(d.id) as dept
+        from t_user u
+                 left join t_department d on d.id = u.dept_id
+                 left join t_user_role ur on u.id = ur.user_id
+                 left join t_role r on ur.role_id = r.id
+        where r.name = #{roleName}
+          and u.status = #{userStatus}
+    </select>
+    <select id="selectReviewerAutoAssign" resultType="com.ibm.rms.pojo.vo.UserVo" resultMap="userVoMap">
+        select BIN_TO_UUID(u.id) as id,
+               username,
+               password,
+               u.name            as name,
+               sign_in_date,
+               email,
+               u.status,
+               BIN_TO_UUID(d.id) as dept
+        from t_interview i
+                 left join t_user u on u.id = i.reviewer
+                 left join t_department d on d.id = u.dept_id
+                 left join t_user_role ur on ur.user_id = u.id
+                 left join t_role r on r.id = ur.role_id
+        where r.name = #{roleName}
+          and u.status = #{userStatus}
+        group by i.reviewer
+        having count(i.reviewer) != 0
+        order by count(i.reviewer)
+        limit 1
+    </select>
+    <select id="selectOneByUsername" resultType="com.ibm.rms.pojo.User">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_user
+        where username = #{username}
+    </select>
+    <select id="selectPermissionsById" resultType="java.lang.String">
+        select t_permission.code
+        from t_user
+                 left join t_user_role on t_user.id = t_user_role.user_id
+                 left join t_role on t_user_role.role_id = t_role.id
+                 left join t_role_permission on t_role.id = t_role_permission.role_id
+                 left join t_permission on t_role_permission.permission_id = t_permission.id
+        where t_user.id = UUID_TO_BIN(#{id});
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_user
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.User">
+        insert into t_user (id, username, password,
+                            name, sign_in_date,
+                            email, status, dept_id)
+        values (UUID_TO_BIN(UUID(), true), #{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
+                #{name,jdbcType=VARCHAR}, #{signInDate,jdbcType=DATE},
+                #{email,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER}, UUID_TO_BIN(#{deptId}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.User">
+        insert into t_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="username != null">
+                username,
+            </if>
+            <if test="password != null">
+                password,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="signInDate != null">
+                sign_in_date,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="deptId != null">
+                dept_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="username != null">
+                #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="signInDate != null">
+                #{signInDate,jdbcType=DATE},
+            </if>
+            <if test="email != null">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="deptId != null">
+                UUID_TO_BIN(#{deptId}),
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.User">
+        update t_user
+        <set>
+            <if test="username != null">
+                username = #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                password = #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="signInDate != null">
+                sign_in_date = #{signInDate,jdbcType=DATE},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="deptId != null">
+                dept_id = UUID_TO_BIN(#{deptId}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.User">
+        update t_user
+        set username     = #{username,jdbcType=VARCHAR},
+            password     = #{password,jdbcType=VARCHAR},
+            name         = #{name,jdbcType=VARCHAR},
+            sign_in_date = #{signInDate,jdbcType=DATE},
+            email        = #{email,jdbcType=VARCHAR},
+            status       = #{status,jdbcType=INTEGER}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByIdSelective">
+        update t_user
+        <set>
+            <if test="username != null and username != ''">
+                username = #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null and email != ''">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="dept != null and dept != ''">
+                dept_id = UUID_TO_BIN(#{dept}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

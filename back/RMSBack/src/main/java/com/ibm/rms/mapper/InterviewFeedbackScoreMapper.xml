@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.InterviewFeedbackScoreMapper">
+    <sql id="Base_Column_List">
+        id, item, score, interview_feedback_id
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID(id) as id, item, score, BIN_TO_UUID(interview_feedback_id) as interview_feedback_id
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.InterviewFeedbackScore">
+        select
+        <include refid="Base_Column_List"/>
+        from t_interview_feedback_score
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_interview_feedback_score
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.InterviewFeedbackScore">
+        insert into t_interview_feedback_score (id, item, score,
+                                                interview_feedback_id)
+        values (UUID_TO_BIN(UUID(), true), #{item,jdbcType=INTEGER}, #{score,jdbcType=INTEGER},
+                UUID_TO_BIN(#{interviewFeedbackId}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.InterviewFeedbackScore">
+        insert into t_interview_feedback_score
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="item != null">
+                item,
+            </if>
+            <if test="score != null">
+                score,
+            </if>
+            <if test="interviewFeedbackId != null">
+                interview_feedback_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="item != null">
+                #{item,jdbcType=INTEGER},
+            </if>
+            <if test="score != null">
+                #{score,jdbcType=INTEGER},
+            </if>
+            <if test="interviewFeedbackId != null">
+                UUID_TO_BIN(#{interviewFeedbackId}),
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.InterviewFeedbackScore">
+        update t_interview_feedback_score
+        <set>
+            <if test="item != null">
+                item = #{item,jdbcType=INTEGER},
+            </if>
+            <if test="score != null">
+                score = #{score,jdbcType=INTEGER},
+            </if>
+            <if test="interviewFeedbackId != null">
+                interview_feedback_id = UUID_TO_BIN(#{interviewFeedbackId}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.InterviewFeedbackScore">
+        update t_interview_feedback_score
+        set item  = #{item,jdbcType=INTEGER},
+            score = #{score,jdbcType=INTEGER}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

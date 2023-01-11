@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.DictionaryTypeMapper">
+    <sql id="Base_Column_List">
+        id, type_code, comment
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as id, type_code, comment
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.DictionaryType">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_dictionary_type
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectAllByPageCondition" resultType="com.ibm.rms.pojo.DictionaryType">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_dictionary_type
+        <where>
+            <if test="typeCode != null and typeCode != ''">
+                type_code like '%' #{typeCode} '%'
+            </if>
+        </where>
+        <if test="pageNo != null and pageSize != null">
+            limit #{pageNo}, #{pageSize}
+        </if>
+    </select>
+    <select id="selectTotalSizeByCondition" resultType="java.lang.Long">
+        select count(*)
+        from t_dictionary_type
+        <where>
+            <if test="typeCode != null and typeCode != ''">
+                type_code like '%' #{typeCode} '%'
+            </if>
+        </where>
+    </select>
+    <select id="selectAll" resultType="com.ibm.rms.pojo.DictionaryType">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_dictionary_type
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_dictionary_type dt
+        where id = UUID_TO_BIN(#{id})
+          and id not in (select dv.type_id from t_dictionary_value dv where dv.type_id = dt.id)
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.DictionaryType">
+        insert into t_dictionary_type (id, type_code, comment)
+        values (UUID_TO_BIN(UUID(), true), #{typeCode,jdbcType=VARCHAR}, #{comment,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.DictionaryType">
+        insert into t_dictionary_type
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="typeCode != null">
+                type_code,
+            </if>
+            <if test="comment != null">
+                comment,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(UUID(), true),
+            <if test="typeCode != null">
+                #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                #{comment,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.DictionaryType">
+        update t_dictionary_type dt
+        <set>
+            <if test="typeCode != null">
+                type_code = #{typeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                comment = #{comment,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.DictionaryType">
+        update t_dictionary_type
+        set type_code    = #{type_code,jdbcType=VARCHAR},
+            comment = #{comment,jdbcType=VARCHAR}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

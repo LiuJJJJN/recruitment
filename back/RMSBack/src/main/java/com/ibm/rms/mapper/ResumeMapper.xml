@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.ResumeMapper">
+    <sql id="Base_Column_List">
+        id, file_path, name, sex, birthday, email, tel, education, grad_date, grad_school,
+    major, tech_ability, lang_ability, other_ability, work_experience, self_assessment, 
+    source, internal_comment, obey, creat_date, modify_date, internal_recommender, intended_dept, creater, modifyer
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as id, file_path, name, sex, birthday, email, tel, education, grad_date, grad_school,
+        major, tech_ability, lang_ability, other_ability, work_experience, self_assessment, source,
+        obey, creat_date, modify_date, BIN_TO_UUID(internal_recommender) as internalRecommender,
+        BIN_TO_UUID(intended_dept) as intendedDept, BIN_TO_UUID(creater) as creater,
+        BIN_TO_UUID(modifyer) as modifyer
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.Resume">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_resume
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectByInterviewId" resultType="com.ibm.rms.pojo.Resume">
+        select BIN_TO_UUID(r.id)                   as id,
+               file_path,
+               name,
+               sex,
+               birthday,
+               email,
+               tel,
+               education,
+               grad_date,
+               grad_school,
+               major,
+               tech_ability,
+               lang_ability,
+               other_ability,
+               work_experience,
+               self_assessment,
+               source,
+               obey,
+               r.creat_date,
+               r.modify_date,
+               internal_recommender,
+               BIN_TO_UUID(intended_dept)        as intended_dept,
+               BIN_TO_UUID(r.creater)              as creater,
+               BIN_TO_UUID(r.modifyer)             as modifyer
+        from t_interview i
+                 left join t_resume r on i.resume_id = r.id
+        where i.id = UUID_TO_BIN(#{interviewId})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_resume
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.Resume">
+        insert into t_resume (id, file_path, name,
+                              sex, birthday, email,
+                              tel, education, grad_date,
+                              grad_school, major, tech_ability,
+                              lang_ability, other_ability, work_experience,
+                              self_assessment, source,
+                              obey, creat_date, modify_date,
+                              internal_recommender, intended_dept,
+                              creater, modifyer)
+        values (UUID_TO_BIN(UUID(), true), #{filePath,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR},
+                #{sex,jdbcType=INTEGER}, #{birthday,jdbcType=DATE}, #{email,jdbcType=VARCHAR},
+                #{tel,jdbcType=VARCHAR}, #{education,jdbcType=INTEGER}, #{gradDate,jdbcType=DATE},
+                #{gradSchool,jdbcType=VARCHAR}, #{major,jdbcType=VARCHAR}, #{techAbility,jdbcType=INTEGER},
+                #{langAbility,jdbcType=INTEGER}, #{otherAbility,jdbcType=VARCHAR}, #{workExperience,jdbcType=VARCHAR},
+                #{selfAssessment,jdbcType=VARCHAR}, #{source,jdbcType=INTEGER},
+                #{obey,jdbcType=INTEGER}, #{creatDate,jdbcType=DATE}, #{modifyDate,jdbcType=DATE},
+                UUID_TO_BIN(#{internalRecommender}), UUID_TO_BIN(#{intendedDept}),
+                UUID_TO_BIN(#{creater}), UUID_TO_BIN(#{modifyer}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.Resume">
+        insert into t_resume
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="filePath != null">
+                file_path,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="sex != null">
+                sex,
+            </if>
+            <if test="birthday != null">
+                birthday,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="tel != null">
+                tel,
+            </if>
+            <if test="education != null">
+                education,
+            </if>
+            <if test="gradDate != null">
+                grad_date,
+            </if>
+            <if test="gradSchool != null">
+                grad_school,
+            </if>
+            <if test="major != null">
+                major,
+            </if>
+            <if test="techAbility != null">
+                tech_ability,
+            </if>
+            <if test="langAbility != null">
+                lang_ability,
+            </if>
+            <if test="otherAbility != null">
+                other_ability,
+            </if>
+            <if test="workExperience != null">
+                work_experience,
+            </if>
+            <if test="selfAssessment != null">
+                self_assessment,
+            </if>
+            <if test="source != null">
+                source,
+            </if>
+            <if test="obey != null">
+                obey,
+            </if>
+            creat_date,
+            <if test="internalRecommender != null">
+                internal_recommender,
+            </if>
+            <if test="intendedDept != null">
+                intended_dept,
+            </if>
+            creater,
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(UUID(), true),
+            <if test="filePath != null">
+                #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                #{sex,jdbcType=INTEGER},
+            </if>
+            <if test="birthday != null">
+                #{birthday,jdbcType=DATE},
+            </if>
+            <if test="email != null">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="tel != null">
+                #{tel,jdbcType=VARCHAR},
+            </if>
+            <if test="education != null">
+                #{education,jdbcType=INTEGER},
+            </if>
+            <if test="gradDate != null">
+                #{gradDate,jdbcType=DATE},
+            </if>
+            <if test="gradSchool != null">
+                #{gradSchool,jdbcType=VARCHAR},
+            </if>
+            <if test="major != null">
+                #{major,jdbcType=VARCHAR},
+            </if>
+            <if test="techAbility != null">
+                #{techAbility,jdbcType=INTEGER},
+            </if>
+            <if test="langAbility != null">
+                #{langAbility,jdbcType=INTEGER},
+            </if>
+            <if test="otherAbility != null">
+                #{otherAbility,jdbcType=VARCHAR},
+            </if>
+            <if test="workExperience != null">
+                #{workExperience,jdbcType=VARCHAR},
+            </if>
+            <if test="selfAssessment != null">
+                #{selfAssessment,jdbcType=VARCHAR},
+            </if>
+            <if test="source != null">
+                #{source,jdbcType=INTEGER},
+            </if>
+            <if test="obey != null">
+                #{obey,jdbcType=INTEGER},
+            </if>
+            NOW(),
+            <if test="internalRecommender != null">
+                UUID_TO_BIN(#{internalRecommender}),
+            </if>
+            <if test="intendedDept != null">
+                UUID_TO_BIN(#{intendedDept}),
+            </if>
+            UUID_TO_BIN(#{creater}),
+        </trim>
+    </insert>
+    <insert id="insertSelectiveByResumeInterviewDto">
+        insert into t_resume
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="dto.filePath != null and dto.filePath != ''">
+                file_path,
+            </if>
+            <if test="dto.name != null and dto.name != ''">
+                name,
+            </if>
+            <if test="dto.sex != null and dto.sex != ''">
+                sex,
+            </if>
+            <if test="dto.birthday != null">
+                birthday,
+            </if>
+            <if test="dto.email != null and dto.email != ''">
+                email,
+            </if>
+            <if test="dto.tel != null and dto.tel != ''">
+                tel,
+            </if>
+            <if test="dto.education != null and dto.education != ''">
+                education,
+            </if>
+            <if test="dto.gradDate != null">
+                grad_date,
+            </if>
+            <if test="dto.gradSchool != null and dto.gradSchool != ''">
+                grad_school,
+            </if>
+            <if test="dto.major != null and dto.major != ''">
+                major,
+            </if>
+            <if test="dto.techAbility != null and dto.techAbility != ''">
+                tech_ability,
+            </if>
+            <if test="dto.langAbility != null and dto.langAbility != ''">
+                lang_ability,
+            </if>
+            <if test="dto.otherAbility != null and dto.otherAbility != ''">
+                other_ability,
+            </if>
+            <if test="dto.workExperience != null and dto.workExperience != ''">
+                work_experience,
+            </if>
+            <if test="dto.selfAssessment != null and dto.selfAssessment != ''">
+                self_assessment,
+            </if>
+            <if test="dto.source != null and dto.source != ''">
+                source,
+            </if>
+            <if test="dto.obey != null and dto.obey != ''">
+                obey,
+            </if>
+            creat_date,
+            <if test="dto.internalRecommender != null and dto.internalRecommender != ''">
+                internal_recommender,
+            </if>
+            <if test="dto.intendedDept != null and dto.intendedDept != ''">
+                intended_dept,
+            </if>
+            creater,
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(#{resumeId}),
+            <if test="dto.filePath != null and dto.filePath != ''">
+                #{dto.filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.name != null and dto.name != ''">
+                #{dto.name,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.sex != null and dto.sex != ''">
+                #{dto.sex,jdbcType=INTEGER},
+            </if>
+            <if test="dto.birthday != null">
+                #{dto.birthday},
+            </if>
+            <if test="dto.email != null and dto.email != ''">
+                #{dto.email,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.tel != null and dto.tel != ''">
+                #{dto.tel,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.education != null and dto.education != ''">
+                #{dto.education,jdbcType=INTEGER},
+            </if>
+            <if test="dto.gradDate != null">
+                #{dto.gradDate},
+            </if>
+            <if test="dto.gradSchool != null and dto.gradSchool != ''">
+                #{dto.gradSchool,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.major != null and dto.major != ''">
+                #{dto.major,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.techAbility != null and dto.techAbility != ''">
+                #{dto.techAbility,jdbcType=INTEGER},
+            </if>
+            <if test="dto.langAbility != null and dto.langAbility != ''">
+                #{dto.langAbility,jdbcType=INTEGER},
+            </if>
+            <if test="dto.otherAbility != null and dto.otherAbility != ''">
+                #{dto.otherAbility,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.workExperience != null and dto.workExperience != ''">
+                #{dto.workExperience,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.selfAssessment != null and dto.selfAssessment != ''">
+                #{dto.selfAssessment,jdbcType=VARCHAR},
+            </if>
+            <if test="dto.source != null and dto.source != ''">
+                #{dto.source,jdbcType=INTEGER},
+            </if>
+            <if test="dto.obey != null and dto.obey != ''">
+                #{dto.obey,jdbcType=INTEGER},
+            </if>
+            NOW(),
+            <if test="dto.internalRecommender != null and dto.internalRecommender != ''">
+                #{dto.internalRecommender},
+            </if>
+            <if test="dto.intendedDept != null and dto.intendedDept != ''">
+                UUID_TO_BIN(#{dto.intendedDept}),
+            </if>
+            UUID_TO_BIN(#{userId}),
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.Resume">
+        update t_resume
+        <set>
+            <if test="filePath != null">
+                file_path = #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                sex = #{sex,jdbcType=INTEGER},
+            </if>
+            <if test="birthday != null">
+                birthday = #{birthday,jdbcType=DATE},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="tel != null">
+                tel = #{tel,jdbcType=VARCHAR},
+            </if>
+            <if test="education != null">
+                education = #{education,jdbcType=INTEGER},
+            </if>
+            <if test="gradDate != null">
+                grad_date = #{gradDate,jdbcType=DATE},
+            </if>
+            <if test="gradSchool != null">
+                grad_school = #{gradSchool,jdbcType=VARCHAR},
+            </if>
+            <if test="major != null">
+                major = #{major,jdbcType=VARCHAR},
+            </if>
+            <if test="techAbility != null">
+                tech_ability = #{techAbility,jdbcType=INTEGER},
+            </if>
+            <if test="langAbility != null">
+                lang_ability = #{langAbility,jdbcType=INTEGER},
+            </if>
+            <if test="otherAbility != null">
+                other_ability = #{otherAbility,jdbcType=VARCHAR},
+            </if>
+            <if test="workExperience != null">
+                work_experience = #{workExperience,jdbcType=VARCHAR},
+            </if>
+            <if test="selfAssessment != null">
+                self_assessment = #{selfAssessment,jdbcType=VARCHAR},
+            </if>
+            <if test="source != null">
+                source = #{source,jdbcType=INTEGER},
+            </if>
+            <if test="obey != null">
+                obey = #{obey,jdbcType=INTEGER},
+            </if>
+            <if test="creatDate != null">
+                creat_date = #{creatDate,jdbcType=DATE},
+            </if>
+            <if test="modifyDate != null">
+                modify_date = #{modifyDate,jdbcType=DATE},
+            </if>
+            <if test="internalRecommender != null">
+                internal_recommender = UUID_TO_BIN(#{internalRecommender}),
+            </if>
+            <if test="intendedDept != null">
+                intended_dept = UUID_TO_BIN(#{intendedDept}),
+            </if>
+            <if test="creater != null">
+                creater = UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="modifyer != null">
+                modifyer = #{modifyer,jdbcType=VARBINARY},
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.ibm.rms.pojo.Resume">
+        update t_resume
+        set file_path            = #{filePath,jdbcType=VARCHAR},
+            name                 = #{name,jdbcType=VARCHAR},
+            sex                  = #{sex,jdbcType=INTEGER},
+            birthday             = #{birthday,jdbcType=DATE},
+            email                = #{email,jdbcType=VARCHAR},
+            tel                  = #{tel,jdbcType=VARCHAR},
+            education            = #{education,jdbcType=INTEGER},
+            grad_date            = #{gradDate,jdbcType=DATE},
+            grad_school          = #{gradSchool,jdbcType=VARCHAR},
+            major                = #{major,jdbcType=VARCHAR},
+            tech_ability         = #{techAbility,jdbcType=INTEGER},
+            lang_ability         = #{langAbility,jdbcType=INTEGER},
+            other_ability        = #{otherAbility,jdbcType=VARCHAR},
+            work_experience      = #{workExperience,jdbcType=VARCHAR},
+            self_assessment      = #{selfAssessment,jdbcType=VARCHAR},
+            source               = #{source,jdbcType=INTEGER},
+            obey                 = #{obey,jdbcType=INTEGER},
+            creat_date           = #{creatDate,jdbcType=DATE},
+            modify_date          = #{modifyDate,jdbcType=DATE},
+            internal_recommender = UUID_TO_BIN(#{internalRecommender}),
+            intended_dept        = UUID_TO_BIN(#{intendedDept}),
+            creater              = UUID_TO_BIN(#{creater}),
+            modifyer             = #{modifyer,jdbcType=VARBINARY}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.Resume">
+        update t_resume
+        set file_path        = #{filePath,jdbcType=VARCHAR},
+            name             = #{name,jdbcType=VARCHAR},
+            sex              = #{sex,jdbcType=INTEGER},
+            birthday         = #{birthday,jdbcType=DATE},
+            email            = #{email,jdbcType=VARCHAR},
+            tel              = #{tel,jdbcType=VARCHAR},
+            education        = #{education,jdbcType=INTEGER},
+            grad_date        = #{gradDate,jdbcType=DATE},
+            grad_school      = #{gradSchool,jdbcType=VARCHAR},
+            major            = #{major,jdbcType=VARCHAR},
+            tech_ability     = #{techAbility,jdbcType=INTEGER},
+            lang_ability     = #{langAbility,jdbcType=INTEGER},
+            other_ability    = #{otherAbility,jdbcType=VARCHAR},
+            work_experience  = #{workExperience,jdbcType=VARCHAR},
+            self_assessment  = #{selfAssessment,jdbcType=VARCHAR},
+            source           = #{source,jdbcType=INTEGER},
+            obey             = #{obey,jdbcType=INTEGER},
+            creat_date       = #{creatDate,jdbcType=DATE},
+            modify_date      = #{modifyDate,jdbcType=DATE}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKeySelectiveReview">
+        update t_resume
+        <set>
+            <if test="data.education != null">
+                education = #{data.education,jdbcType=INTEGER},
+            </if>
+            <if test="data.gradDate != null">
+                grad_date = #{data.gradDate,jdbcType=DATE},
+            </if>
+            <if test="data.gradSchool != null">
+                grad_school = #{data.gradSchool,jdbcType=VARCHAR},
+            </if>
+            <if test="data.major != null">
+                major = #{data.major,jdbcType=VARCHAR},
+            </if>
+            <if test="data.techAbility != null">
+                tech_ability = #{data.techAbility,jdbcType=INTEGER},
+            </if>
+            <if test="data.langAbility != null">
+                lang_ability = #{data.langAbility,jdbcType=INTEGER},
+            </if>
+            <if test="data.otherAbility != null">
+                other_ability = #{data.otherAbility,jdbcType=VARCHAR},
+            </if>
+            <if test="data.workExperience != null">
+                work_experience = #{data.workExperience,jdbcType=VARCHAR},
+            </if>
+            modify_date = NOW(),
+            modifyer = UUID_TO_BIN(#{id}),
+        </set>
+        where id = UUID_TO_BIN(#{data.id})
+        <if test="data.modifyDate == null">
+            and modify_date is null
+        </if>
+        <if test="data.modifyDate != null">
+            and modify_date = #{data.modifyDate,javaType=DATE}
+        </if>
+    </update>
+</mapper>

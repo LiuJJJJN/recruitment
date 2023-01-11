@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.InterviewFeedbackMapper">
+    <sql id="Base_Column_List">
+        id, result, interview_id, interviewer
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as id, result, BIN_TO_UUID(interview_id) as interview_id, interview_id(interviewer) as interviewer
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.InterviewFeedback">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_interview_feedback
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_interview_feedback
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.InterviewFeedback">
+        insert into t_interview_feedback (id, result, interview_id,
+                                          interviewer)
+        values (UUID_TO_BIN(UUID(), true), #{result,jdbcType=INTEGER}, UUID_TO_BIN(#{interviewId}),
+                UUID_TO_BIN(#{interviewer}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.InterviewFeedback">
+        insert into t_interview_feedback
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="result != null">
+                result,
+            </if>
+            <if test="interviewId != null">
+                interview_id,
+            </if>
+            <if test="interviewer != null">
+                interviewer,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="result != null">
+                #{result,jdbcType=INTEGER},
+            </if>
+            <if test="interviewId != null">
+                UUID_TO_BIN(#{interviewId}),
+            </if>
+            <if test="interviewer != null">
+                UUID_TO_BIN(#{interviewer}),
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.InterviewFeedback">
+        update t_interview_feedback
+        <set>
+            <if test="result != null">
+                result = #{result,jdbcType=INTEGER},
+            </if>
+            <if test="interviewId != null">
+                interview_id = UUID_TO_BIN(#{interviewId}),
+            </if>
+            <if test="interviewer != null">
+                interviewer = UUID_TO_BIN(#{interviewer}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.InterviewFeedback">
+        update t_interview_feedback
+        set result = #{result,jdbcType=INTEGER}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

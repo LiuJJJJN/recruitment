@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.DictionaryValueMapper">
+    <sql id="Base_Column_List">
+        id, value_key, value_code, comment, type_id
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as id, value_key, value_code, comment, BIN_TO_UUID(type_id) as type_id
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.DictionaryValue">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_dictionary_value
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="countByTypeId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_dictionary_value dv
+        WHERE UUID_TO_BIN(#{id}) = dv.type_id
+    </select>
+    <select id="selectAllByPageCondition" resultType="com.ibm.rms.pojo.vo.DictionaryValueVo">
+        select
+        BIN_TO_UUID(dv.id) as id,
+        type_code,
+        value_key,
+        value_code,
+        dv.comment as comment
+        from t_dictionary_value dv
+        left join t_dictionary_type dt on dv.type_id = dt.id
+        <where>
+            <if test="typeCode != null and typeCode != ''">
+                type_code like '%' #{typeCode} '%'
+            </if>
+            <if test="valueCode != null and valueCode != ''">
+                and value_code like '%' #{valueCode} '%'
+            </if>
+        </where>
+        order by type_code, value_key
+        limit #{pageNo}, #{pageSize}
+    </select>
+    <select id="selectTotalSizeByCondition" resultType="java.lang.Long">
+        select count(*)
+        from t_dictionary_value dv
+        left join t_dictionary_type dt on dv.type_id = dt.id
+        <where>
+            <if test="typeCode != null and typeCode != ''">
+                type_code like '%' #{typeCode} '%'
+            </if>
+            <if test="valueCode != null and valueCode != ''">
+                and value_code like '%' #{valueCode} '%'
+            </if>
+        </where>
+    </select>
+    <select id="countByTypeIdAndValueKey" resultType="java.lang.Long">
+        select count(*)
+        from t_dictionary_value
+        where type_id = UUID_TO_BIN(#{typeId})
+          and value_key = #{valueKey}
+    </select>
+    <select id="selectByDicTypeCode" resultType="com.ibm.rms.pojo.DictionaryValue">
+        select BIN_TO_UUID(dv.id)   as id,
+               value_key,
+               value_code,
+               dv.comment as comment,
+               BIN_TO_UUID(type_id) as type_id
+        from t_dictionary_value dv
+                 left join t_dictionary_type dt on dv.type_id = dt.id
+        where dt.type_code = #{typeCode}
+    </select>
+    <select id="selectByDicTypeCode2Checkable" resultType="com.ibm.rms.pojo.vo.DicValueCheckableVo">
+        select BIN_TO_UUID(dv.id)   as id,
+               value_key,
+               value_code,
+               dv.comment as comment
+        from t_dictionary_value dv
+                 left join t_dictionary_type dt on dv.type_id = dt.id
+        where dt.type_code = #{typeCode}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_dictionary_value
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.DictionaryValue">
+        insert into t_dictionary_value (id, value_key, value_code, comment, type_id)
+        values (UUID_TO_BIN(UUID(), true),
+                #{value_key,jdbcType=INTEGER},
+                #{value_code,jdbcType=VARCHAR},
+                #{comment,jdbcType=VARCHAR},
+                UUID_TO_BIN(#{typeId}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.DictionaryValue">
+        insert into t_dictionary_value
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="valueKey != null">
+                value_key,
+            </if>
+            <if test="valueCode != null">
+                value_code,
+            </if>
+            <if test="comment != null">
+                comment,
+            </if>
+            <if test="typeId != null">
+                type_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(UUID(), true),
+            <if test="valueKey != null">
+                #{valueKey,jdbcType=INTEGER},
+            </if>
+            <if test="valueCode != null">
+                #{valueCode,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                #{comment,jdbcType=VARCHAR},
+            </if>
+            <if test="typeId != null">
+                UUID_TO_BIN(#{typeId}),
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.DictionaryValue">
+        update t_dictionary_value
+        <set>
+            <if test="valueKey != null">
+                value_key = #{valueKey,jdbcType=INTEGER},
+            </if>
+            <if test="valueCode != null">
+                value_code = #{valueCode,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                comment = #{comment,jdbcType=VARCHAR},
+            </if>
+            <if test="typeId != null">
+                type_id = UUID_TO_BIN(#{typeId}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.DictionaryValue">
+        update t_dictionary_value
+        set value_key     = #{value_key,jdbcType=INTEGER},
+            value_code    = #{value_code,jdbcType=VARCHAR},
+            comment = #{comment,jdbcType=VARCHAR}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

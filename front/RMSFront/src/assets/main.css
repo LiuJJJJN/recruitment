@@ -1,0 +1,7 @@
+@import './base.css';
+
+#app {
+  /* 让画面铺满屏幕 */
+  position: absolute;
+  width: 100%;
+}

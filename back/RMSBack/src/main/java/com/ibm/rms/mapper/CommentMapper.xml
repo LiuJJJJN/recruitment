@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.CommentMapper">
+    <sql id="Base_Column_List">
+        id, comment_type, comment, creat_date, modify_date, interview_id, creater, modifyer
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID
+            (id)
+            as id, comment_type, comment, creat_date, modify_date, BIN_TO_UUID(interview_id) as interviewId, BIN_TO_UUID(creater) as creater, BIN_TO_UUID(modifyer) as modifyer
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="byte[]" resultType="com.ibm.rms.pojo.Comment">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_comment
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <resultMap id="idToUserMap" type="com.ibm.rms.pojo.vo.CommentVo">
+        <association property="creater" column="creater" select="selectUserByUserId"/>
+    </resultMap>
+    <select id="selectAllByInterviewId" resultType="com.ibm.rms.pojo.vo.CommentVo" resultMap="idToUserMap">
+        select BIN_TO_UUID(id)           as id,
+               comment_type,
+               comment,
+               BIN_TO_UUID(interview_id) as interviewId,
+               BIN_TO_UUID(creater)      as creater,
+               creat_date
+        from t_comment
+        where interview_id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectUserByUserId" parameterType="String" resultType="com.ibm.rms.pojo.User">
+        select BIN_TO_UUID(id)      as id,
+               username,
+               password,
+               name,
+               sign_in_date,
+               email,
+               status,
+               BIN_TO_UUID(dept_id) as dept_id
+        from t_user
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="byte[]">
+        delete
+        from t_comment
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.Comment">
+        insert into t_comment (id, comment_type, comment,
+                               creat_date, modify_date, interview_id,
+                               creater, modifyer)
+        values (UUID_TO_BIN(UUID(), true), #{commentType,jdbcType=INTEGER}, #{comment,jdbcType=VARCHAR},
+                #{creatDate,jdbcType=DATE}, #{modifyDate,jdbcType=DATE}, UUID_TO_BIN(#{interviewId}),
+                UUID_TO_BIN(#{creater}), UUID_TO_BIN(#{modifyer}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.Comment">
+        insert into t_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="commentType != null">
+                comment_type,
+            </if>
+            <if test="comment != null">
+                comment,
+            </if>
+            <if test="creatDate != null">
+                creat_date,
+            </if>
+            <if test="modifyDate != null">
+                modify_date,
+            </if>
+            <if test="interviewId != null">
+                interview_id,
+            </if>
+            <if test="creater != null">
+                creater,
+            </if>
+            <if test="modifyer != null">
+                modifyer,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="commentType != null">
+                #{commentType,jdbcType=INTEGER},
+            </if>
+            <if test="comment != null">
+                #{comment,jdbcType=VARCHAR},
+            </if>
+            <if test="creatDate != null">
+                #{creatDate,jdbcType=DATE},
+            </if>
+            <if test="modifyDate != null">
+                #{modifyDate,jdbcType=DATE},
+            </if>
+            <if test="interviewId != null">
+                UUID_TO_BIN(#{interviewId}),
+            </if>
+            <if test="creater != null">
+                UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="modifyer != null">
+                UUID_TO_BIN(#{modifyer}),
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertCommentSelective">
+        insert into t_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="comment.commentType != null">
+                comment_type,
+            </if>
+            <if test="comment.comment != null">
+                comment,
+            </if>
+            <if test="comment.interviewId != null">
+                interview_id,
+            </if>
+            creater,
+            creat_date,
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(UUID(), true),
+            <if test="comment.commentType != null">
+                #{comment.commentType,jdbcType=INTEGER},
+            </if>
+            <if test="comment.comment != null">
+                #{comment.comment,jdbcType=VARCHAR},
+            </if>
+            <if test="comment.interviewId != null">
+                UUID_TO_BIN(#{comment.interviewId}),
+            </if>
+            UUID_TO_BIN(#{id}),
+            NOW()
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.Comment">
+        update t_comment
+        <set>
+            <if test="commentType != null">
+                comment_type = #{commentType,jdbcType=INTEGER},
+            </if>
+            <if test="comment != null">
+                comment = #{comment,jdbcType=VARCHAR},
+            </if>
+            <if test="creatDate != null">
+                creat_date = #{creatDate,jdbcType=DATE},
+            </if>
+            <if test="modifyDate != null">
+                modify_date = #{modifyDate,jdbcType=DATE},
+            </if>
+            <if test="interviewId != null">
+                resume_id = UUID_TO_BIN(#{interviewId}),
+            </if>
+            <if test="creater != null">
+                creater = UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="modifyer != null">
+                modifyer = UUID_TO_BIN(#{modifyer}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.Comment">
+        update t_comment
+        set comment_type = #{commentType,jdbcType=INTEGER},
+            comment      = #{comment,jdbcType=VARCHAR},
+            creat_date   = #{creatDate,jdbcType=DATE},
+            modify_date  = #{modifyDate,jdbcType=DATE}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

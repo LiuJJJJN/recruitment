@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.HistoryInterviewMapper">
+   
+    <select id="selectAllByPageCondition" resultType="com.ibm.rms.pojo.vo.HistoryInterviewVo">
+        select
+        	BIN_TO_UUID (i.id) as id,
+        	r.name as name,
+        	dv.value_code as status_code,
+        	i.creat_date as date,
+        	i.status as status
+        from t_interview i left join t_resume r on i.resume_id=r.id
+        	left join t_dictionary_type dt on dt.type_code='interview_status'
+        	left join t_dictionary_value dv on dt.id=dv.type_id and dv.value_key=i.status
+        <where>
+        	i.status in (7,8,9)
+            <if test="nameCode != null and nameCode != ''">
+                r.name like '%' #{nameCode} '%'
+            </if>
+        </where>
+        <if test="pageNo != null and pageSize != null">
+            limit #{pageNo}, #{pageSize}
+        </if>
+    </select>
+    <select id="selectTotalSizeByCondition" resultType="java.lang.Long">
+        select count(*)
+        from t_interview i left join t_resume r on i.resume_id=r.id
+        left join t_dictionary_type dt on dt.type_code='interview_status'
+        left join t_dictionary_value dv on dt.id=dv.type_id and dv.value_key=i.status
+        <where>
+        	i.status in (6,7,8)
+            <if test="nameCode != null and nameCode != ''">
+                r.name like '%' #{nameCode} '%'
+            </if>
+        </where>
+    </select>
+   
+  	<update id="updateInterviewStatusToHoldOn" parameterType="java.lang.String">
+        update  t_interview
+       	<set>
+       		status = 10
+       	</set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <insert id="insertNewInterview" parameterType="java.lang.String">
+        insert into t_interview(id,resume_id,status,creater,creat_date)
+       	values (UUID_TO_BIN(UUID(),true),
+       		(select r_id from 
+       			(select resume_id as r_id from t_interview where id = UUID_TO_BIN(#{arg0})) as r),
+       		1,UUID_TO_BIN(#{arg1}),now()
+       	)
+        
+    </insert>
+   
+</mapper>

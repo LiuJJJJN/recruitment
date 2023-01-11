@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.UserRoleMapper">
+    <sql id="Base_Column_List">
+        id, role_id, user_id
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID
+            (id)
+            as id, BIN_TO_UUID(role_id) as role_id, BIN_TO_UUID(user_id) as user_id
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.UserRole">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_user_role
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_user_role
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <delete id="deleteByUserId">
+        delete
+        from t_user_role
+        where user_id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.UserRole">
+        insert into t_user_role (id,
+                                 role_id,
+                                 user_id)
+        values (UUID_TO_BIN(UUID(), true),
+                UUID_TO_BIN(#{roleId}),
+                UUID_TO_BIN(#{userId}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.UserRole">
+        insert into t_user_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="roleId != null">
+                role_id,
+            </if>
+            <if test="userId != null">
+                user_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="roleId != null">
+                UUID_TO_BIN(#{roleId}),
+            </if>
+            <if test="userId != null">
+                UUID_TO_BIN(#{userId}),
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertByUserIdAndRoleList">
+        insert into t_user_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            role_id,
+            user_id,
+        </trim>
+        values
+        <foreach item="item" index="index" collection="roleIdList"
+                 separator=",">
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                UUID_TO_BIN(UUID(), true),
+                <if test="item != null">
+                    UUID_TO_BIN(#{item}),
+                </if>
+                <if test="userId != null">
+                    UUID_TO_BIN(#{userId}),
+                </if>
+            </trim>
+        </foreach>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.UserRole">
+        update t_user_role
+        <set>
+            <if test="roleId != null">
+                role_id = UUID_TO_BIN(#{roleId}),
+            </if>
+            <if test="userId != null">
+                user_id = UUID_TO_BIN(#{userId}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

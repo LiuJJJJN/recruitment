@@ -1,0 +1,745 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.InterviewMapper">
+    <sql id="Base_Column_List">
+        id, date, status, creat_date, modify_date, resume_id,
+		interviewer_1,
+		interviewer_2, interviewer_3,
+		interviewer_4, creater,
+		modifyer,
+		reviewer
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID
+            (id)
+            as id, date, status, creat_date as
+		creatDate, modify_date as modifyDate,
+		BIN_TO_UUID(resume_id) as
+		resume_id,
+		BIN_TO_UUID(interviewer_1) as interviewer_1,
+		BIN_TO_UUID(interviewer_2) as interviewer_2,
+		BIN_TO_UUID(interviewer_3) as interviewer_3,
+		BIN_TO_UUID(interviewer_4) as interviewer_4,
+		BIN_TO_UUID(creater) as
+		creater, BIN_TO_UUID(modifyer) as modifyer, BIN_TO_UUID(reviewer)
+		as
+		reviewer
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.Interview">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_interview
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="countInterviewStates" resultType="java.util.HashMap">
+        select status    as 'K',
+               count(id) as 'V'
+        from t_interview
+        group by status
+    </select>
+    <select id="countInterviewStatesByUser" resultType="java.util.HashMap">
+        select status as 'K' ,count(id) as 'V'
+        from t_interview
+        where if(2 in
+        <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        , reviewer = UUID_TO_BIN(#{id}) and status=2,false) or
+        if( 5 in
+        <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        , (interviewer_1 = UUID_TO_BIN(#{id}) or interviewer_2 =
+        UUID_TO_BIN(#{id}) or
+        interviewer_3 = UUID_TO_BIN(#{id}) or
+        interviewer_4 = UUID_TO_BIN(#{id})) and
+        status=5,false)
+        or (status in
+        <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and t_interview.status!=2 and t_interview.status!=5)
+        group by status
+
+    </select>
+    <select id="selectInterviewByUserToday"
+            resultType="com.ibm.rms.pojo.vo.InterviewVo">
+        select
+        t_interview.id as 'id', t_resume.name as 'name'
+        ,t_dictionary_value.value_code as
+        'message', t_interview.date as
+        'date',
+        t_interview.status as 'status', t_interview.creat_date as
+        'creat_date',t_interview.modify_date as 'modify_date',
+        t_interview.resume_id as'resume_id',
+        interviewer_1, interviewer_2,
+        interviewer_3,
+        interviewer_4,t_interview.creater as 'creater',
+        t_interview.modifyer as 'modifyer',
+        t_interview.reviewer as
+        'modifyer'
+        from t_interview left join t_resume on t_interview.resume_id =
+        t_resume.id
+        left join t_dictionary_type on
+        t_dictionary_type.type_code='interview_status'
+        left join
+        t_dictionary_value on
+        t_dictionary_type.id=t_dictionary_value.type_id
+        and
+        t_interview.status=t_dictionary_value.value_key
+        where if(2 in
+        <foreach item="item" index="index" collection="list" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+        , reviewer = UUID_TO_BIN(#{id}) and t_interview.status=2 and (
+        if(t_interview.modify_date is
+        null,date(t_interview.creat_date)=#{date},
+        date(t_interview.modify_date)=#{date})),false) or
+        if( 5 in
+        <foreach item="item" index="index" collection="list" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+        , (interviewer_1 = UUID_TO_BIN(#{id}) or interviewer_2 =
+        UUID_TO_BIN(#{id}) or
+        interviewer_3 = UUID_TO_BIN(#{id}) or
+        interviewer_4 = UUID_TO_BIN(#{id})) and
+        t_interview.status=5
+        and
+        date(t_interview.date)=#{date},false)
+        or (t_interview.status in
+        <foreach item="item" index="index" collection="list" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+        and t_interview.status!=2 and t_interview.status!=5 and(
+        if(t_interview.modify_date is
+        null,date(t_interview.creat_date)=#{date},
+        date(t_interview.modify_date)=#{date})))
+        limit #{dto.pageNo},
+        #{dto.pageSize}
+    </select>
+    <resultMap id="InterviewResumeVoMap"
+               type="com.ibm.rms.pojo.vo.InterviewResumeVo">
+        <association property="interviewer1" column="interviewer1"
+                     select="selectUserByUserId"/>
+        <association property="interviewer2" column="interviewer2"
+                     select="selectUserByUserId"/>
+        <association property="interviewer3" column="interviewer3"
+                     select="selectUserByUserId"/>
+        <association property="interviewer4" column="interviewer4"
+                     select="selectUserByUserId"/>
+        <association property="reviewer" column="reviewer"
+                     select="selectUserByUserId"/>
+    </resultMap>
+    <select id="selectAllByPageCondition"
+            resultType="com.ibm.rms.pojo.vo.InterviewResumeVo"
+            resultMap="InterviewResumeVoMap">
+        select BIN_TO_UUID(i.id) as id,
+        date,
+        status,
+        BIN_TO_UUID(resume_id) as
+        resumeId,
+        BIN_TO_UUID(interviewer_1) as interviewer1,
+        BIN_TO_UUID(interviewer_2) as interviewer2,
+        BIN_TO_UUID(interviewer_3)
+        as interviewer3,
+        BIN_TO_UUID(interviewer_4) as interviewer4,
+        BIN_TO_UUID(reviewer) as reviewer,
+        i.creat_date as createDate,
+        i.modify_date as modifyDate,
+        r.file_path as filePath,
+        r.name as name,
+        sex,
+        birthday,
+        email,
+        tel,
+        education,
+        r.grad_date as gradDate,
+        r.grad_school as gradSchool,
+        major,
+        r.tech_ability as techAbility,
+        r.lang_ability as langAbility,
+        r.other_ability as otherAbility,
+        r.work_experience as workExperience,
+        r.self_assessment as
+        selfAssessment,
+        source,
+        r.internal_recommender as internalRecommender,
+        concat(d.company, concat(' ', d.name)) as internalDept,
+        obey
+        from
+        t_interview i
+        left join t_resume r on i.resume_id = r.id
+        left join
+        t_department d on d.id = r.intended_dept
+        <where>
+            <if test="dto.vagueSelect != null and dto.vagueSelect != ''">
+                ${dto.vagueSelect} like '%' #{dto.vagueInput} '%'
+            </if>
+            <if
+                    test="dto.IVStatusList != null and dto.IVStatusList.size() != 0">
+                and status in
+                <foreach collection="dto.IVStatusList" item="item"
+                         index="index" open="(" separator="," close=")">
+                    #{item.valueKey}
+                </foreach>
+            </if>
+            <foreach collection="dto.entryTimeList" item="item"
+                     index="index">
+                <if test="item.valueKey == 1">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 WEEK)
+                </if>
+                <if test="item.valueKey == 2">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 MONTH)
+                </if>
+                <if test="item.valueKey == 3">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -3 MONTH)
+                </if>
+                <if test="item.valueKey == 4">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -6 MONTH)
+                </if>
+                <if test="item.valueKey == 5">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 YEAR)
+                </if>
+                <if test="item.valueKey == 6">
+                    and i.creat_date &lt; DATE_ADD(now(),INTERVAL -1 YEAR)
+                </if>
+            </foreach>
+            <if
+                    test="dto.gradTimeList != null and dto.gradTimeList.size() != 0">
+                and substr(grad_date, 1, 4) in
+                <foreach collection="dto.gradTimeList" item="item"
+                         index="index" open="(" separator="," close=")">
+                    #{item.valueCode}
+                </foreach>
+            </if>
+            <if test="dto.startGradYear != null and dto.startGradYear != ''">
+                and substr(grad_date, 1, 4) >= #{dto.startGradYear}
+            </if>
+            <if test="dto.endGradYear != null and dto.endGradYear != ''">
+                and substr(grad_date, 1, 4) &lt;= #{dto.endGradYear}
+            </if>
+        </where>
+        limit #{dto.pageNo}, #{dto.pageSize}
+    </select>
+    <select id="selectUserByUserId"
+            resultType="com.ibm.rms.pojo.vo.UserVo"
+            resultMap="com.ibm.rms.mapper.UserMapper.userVoMap">
+        select BIN_TO_UUID(u.id)    as id,
+               username,
+               u.name               as name,
+               sign_in_date,
+               email,
+               status,
+               BIN_TO_UUID(dept_id) as dept_id,
+               d.name               as
+                                       dept,
+               d.company            as company
+        from t_user u
+                 left join t_department d on d.id
+            = u.dept_id
+        where u.id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectInterviewOverviewTotalSize"
+            resultType="java.lang.Long">
+        select count(*)
+        from t_interview i
+        left join t_resume r on i.resume_id =
+        r.id
+        left join t_department d on d.id = r.intended_dept
+        <where>
+            <if test="vagueSelect != null and vagueSelect != ''">
+                ${vagueSelect} like '%' #{vagueInput} '%'
+            </if>
+            <if test="IVStatusList != null and IVStatusList.size() != 0">
+                and status in
+                <foreach collection="IVStatusList" item="item" index="index"
+                         open="(" separator="," close=")">
+                    #{item.valueKey}
+                </foreach>
+            </if>
+            <foreach collection="entryTimeList" item="item" index="index">
+                <if test="item.valueKey == 1">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 WEEK)
+                </if>
+                <if test="item.valueKey == 2">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 MONTH)
+                </if>
+                <if test="item.valueKey == 3">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -3 MONTH)
+                </if>
+                <if test="item.valueKey == 4">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -6 MONTH)
+                </if>
+                <if test="item.valueKey == 5">
+                    and i.creat_date > DATE_ADD(now(),INTERVAL -1 YEAR)
+                </if>
+                <if test="item.valueKey == 6">
+                    and i.creat_date &lt; DATE_ADD(now(),INTERVAL -1 YEAR)
+                </if>
+            </foreach>
+            <if test="gradTimeList != null and gradTimeList.size() != 0">
+                and substr(grad_date, 1, 4) in
+                <foreach collection="gradTimeList" item="item" index="index"
+                         open="(" separator="," close=")">
+                    #{item.valueCode}
+                </foreach>
+            </if>
+            <if test="startGradYear != null and startGradYear != ''">
+                and substr(grad_date, 1, 4) >= #{startGradYear}
+            </if>
+            <if test="endGradYear != null and endGradYear != ''">
+                and substr(grad_date, 1, 4) &lt;= #{endGradYear}
+            </if>
+        </where>
+    </select>
+    <select id="selectAllByIdList"
+            resultType="com.ibm.rms.pojo.vo.InterviewResumeExcelVo">
+        select BIN_TO_UUID(i.id) as id,
+        date,
+        status,
+        BIN_TO_UUID(resume_id) as
+        resumeId,
+        (select name from t_user where id = interviewer_1) as
+        interviewer1,
+        (select name from t_user where id = interviewer_2) as
+        interviewer2,
+        (select name from t_user where id = interviewer_3) as
+        interviewer3,
+        (select name from t_user where id = interviewer_4) as
+        interviewer4,
+        (select name from t_user where id = reviewer) as
+        reviewer,
+        i.creat_date as createDate,
+        r.file_path as filePath,
+        r.name as
+        name,
+        sex,
+        birthday,
+        email,
+        tel,
+        education,
+        r.grad_date as gradDate,
+        r.grad_school as gradSchool,
+        major,
+        r.tech_ability as techAbility,
+        r.lang_ability as langAbility,
+        r.other_ability as otherAbility,
+        r.work_experience as workExperience,
+        r.self_assessment as
+        selfAssessment,
+        source,
+        r.internal_recommender as internalRecommender,
+        concat(d.company, concat(' ', d.name)) as internalDept,
+        obey
+        from
+        t_interview i
+        left join t_resume r on i.resume_id = r.id
+        left join
+        t_department d on d.id = r.intended_dept
+        <where>
+            <foreach collection="list" item="item">
+                or i.id =
+                UUID_TO_BIN(#{item})
+            </foreach>
+        </where>
+    </select>
+    <select id="countByIdListAndStatus" resultType="java.lang.Long">
+        select count(*)
+        from t_interview
+        where status = #{status}
+        and id in
+        <foreach collection="idList" item="item" open="("
+                 separator="," close=")">
+            UUID_TO_BIN(#{item})
+        </foreach>
+    </select>
+    <resultMap id="ResumeInterviewVoMap"
+               type="com.ibm.rms.pojo.vo.ResumeInterviewVo">
+        <association property="interviewer1" column="interviewer1"
+                     select="selectUserByUserId"/>
+        <association property="interviewer2" column="interviewer2"
+                     select="selectUserByUserId"/>
+        <association property="interviewer3" column="interviewer3"
+                     select="selectUserByUserId"/>
+        <association property="interviewer4" column="interviewer4"
+                     select="selectUserByUserId"/>
+        <association property="reviewer" column="reviewer"
+                     select="selectUserByUserId"/>
+    </resultMap>
+    <select id="selectInterviewResumeByInterviewId"
+            resultType="com.ibm.rms.pojo.vo.ResumeInterviewVo"
+            resultMap="ResumeInterviewVoMap">
+        select BIN_TO_UUID(i.id) as id,
+        date,
+        status,
+        BIN_TO_UUID(resume_id) as
+        resumeId,
+        BIN_TO_UUID(interviewer_1) as interviewer1,
+        BIN_TO_UUID(interviewer_2) as interviewer2,
+        BIN_TO_UUID(interviewer_3)
+        as interviewer3,
+        BIN_TO_UUID(interviewer_4) as interviewer4,
+        BIN_TO_UUID(reviewer) as reviewer,
+        i.creat_date as createDate,
+        i.modify_date as modifyDate,
+        r.file_path as filePath,
+        r.name as name,
+        sex,
+        birthday,
+        email,
+        tel,
+        education,
+        r.grad_date as gradDate,
+        r.grad_school as gradSchool,
+        major,
+        (select value_code
+        from
+        t_dictionary_value
+        where type_id = (select id from t_dictionary_type
+        where type_code =
+        'tech_ability')
+        and value_key = r.tech_ability) as
+        techAbility,
+        (select value_code
+        from
+        t_dictionary_value
+        where type_id = (select id from t_dictionary_type
+        where type_code =
+        'lang_ability')
+        and value_key = r.lang_ability) as
+        langAbility,
+        r.other_ability as
+        otherAbility,
+        r.work_experience as workExperience,
+        r.self_assessment as
+        selfAssessment,
+        source,
+        r.internal_recommender as
+        internalRecommender,
+        concat(d.company, concat(' ', d.name)) as
+        internalDept,
+        obey
+        from
+        t_interview i
+        left join t_resume r on i.resume_id
+        = r.id
+        left join
+        t_department d on d.id = r.intended_dept
+        <where>
+            i.id = UUID_TO_BIN(#{id})
+        </where>
+    </select>
+    <select id="selectUUID" resultType="java.lang.String">
+        select BIN_TO_UUID(UUID_TO_BIN(UUID(), true));
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_interview
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.Interview">
+        insert into t_interview (id,
+                                 date, status,
+                                 creat_date, modify_date, resume_id,
+                                 interviewer_1,
+                                 interviewer_2, interviewer_3,
+                                 interviewer_4, creater, modifyer,
+                                 reviewer)
+        values (UUID_TO_BIN(UUID(), true), #{date,jdbcType=DATE},
+                #{status,jdbcType=INTEGER},
+                #{creatDate,jdbcType=DATE},
+                #{modifyDate,jdbcType=DATE}, UUID_TO_BIN(#{resumeId}),
+                UUID_TO_BIN(#{interviewer1}), UUID_TO_BIN(#{interviewer2}),
+                UUID_TO_BIN(#{interviewer3}),
+                UUID_TO_BIN(#{interviewer4}),
+                UUID_TO_BIN(#{creater}), UUID_TO_BIN(#{modifyer}),
+                UUID_TO_BIN(#{reviewer}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.Interview">
+        insert into t_interview
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="date != null">
+                date,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="creatDate != null">
+                creat_date,
+            </if>
+            <if test="modifyDate != null">
+                modify_date,
+            </if>
+            <if test="resumeId != null">
+                resume_id,
+            </if>
+            <if test="interviewer1 != null">
+                interviewer_1,
+            </if>
+            <if test="interviewer2 != null">
+                interviewer_2,
+            </if>
+            <if test="interviewer3 != null">
+                interviewer_3,
+            </if>
+            <if test="interviewer4 != null">
+                interviewer_4,
+            </if>
+            <if test="creater != null">
+                creater,
+            </if>
+            <if test="modifyer != null">
+                modifyer,
+            </if>
+            <if test="reviewer != null">
+                reviewer,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="date != null">
+                #{date,jdbcType=DATE},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="creatDate != null">
+                #{creatDate,jdbcType=DATE},
+            </if>
+            <if test="modifyDate != null">
+                #{modifyDate,jdbcType=DATE},
+            </if>
+            <if test="resumeId != null">
+                UUID_TO_BIN(#{resumeId}),
+            </if>
+            <if test="interviewer1 != null">
+                UUID_TO_BIN(#{interviewer1}),
+            </if>
+            <if test="interviewer2 != null">
+                UUID_TO_BIN(#{interviewer2}),
+            </if>
+            <if test="interviewer3 != null">
+                UUID_TO_BIN(#{interviewer3}),
+            </if>
+            <if test="interviewer4 != null">
+                UUID_TO_BIN(#{interviewer4}),
+            </if>
+            <if test="creater != null">
+                UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="modifyer != null">
+                UUID_TO_BIN(#{modifyer}),
+            </if>
+            <if test="reviewer != null">
+                UUID_TO_BIN(#{reviewer}),
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertSelective3CVUpload">
+        insert into t_interview
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="status != null">
+                status,
+            </if>
+            creat_date,
+            <if test="resumeId != null">
+                resume_id,
+            </if>
+            <if test="creater != null">
+                creater,
+            </if>
+            <if test="reviewer != null">
+                reviewer,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(#{id}),
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            NOW(),
+            <if test="resumeId != null">
+                UUID_TO_BIN(#{resumeId}),
+            </if>
+            <if test="creater != null">
+                UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="reviewer != null">
+                UUID_TO_BIN(#{reviewer}),
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective"
+            parameterType="com.ibm.rms.pojo.Interview">
+        update t_interview
+        <set>
+            <if test="date != null">
+                date = #{date,jdbcType=DATE},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="creatDate != null">
+                creat_date = #{creatDate,jdbcType=DATE},
+            </if>
+            <if test="modifyDate != null">
+                modify_date = #{modifyDate,jdbcType=DATE},
+            </if>
+            <if test="resumeId != null">
+                resume_id = UUID_TO_BIN(#{resumeId}),
+            </if>
+            <if test="interviewer1 != null">
+                interviewer_1 = UUID_TO_BIN(#{interviewer1}),
+            </if>
+            <if test="interviewer2 != null">
+                interviewer_2 = UUID_TO_BIN(#{interviewer2}),
+            </if>
+            <if test="interviewer3 != null">
+                interviewer_3 = UUID_TO_BIN(#{interviewer3}),
+            </if>
+            <if test="interviewer4 != null">
+                interviewer_4 = UUID_TO_BIN(#{interviewer4}),
+            </if>
+            <if test="creater != null">
+                creater = UUID_TO_BIN(#{creater}),
+            </if>
+            <if test="modifyer != null">
+                modifyer = UUID_TO_BIN(#{modifyer}),
+            </if>
+            <if test="reviewer != null">
+                reviewer = UUID_TO_BIN(#{reviewer}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey"
+            parameterType="com.ibm.rms.pojo.Interview">
+        update t_interview
+        set date        = #{date,jdbcType=DATE},
+            status      = #{status,jdbcType=INTEGER},
+            creat_date  =
+                #{creatDate,jdbcType=DATE},
+            modify_date = #{modifyDate,jdbcType=DATE}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateStatusByPrimary">
+        update t_interview
+        set status = #{status,jdbcType=INTEGER},
+        modifyer =
+        UUID_TO_BIN(#{id}),
+        modify_date = NOW()
+        where id = UUID_TO_BIN(#{vo.id})
+        <if test="vo.modifyDate == null">
+            and modify_date is null
+        </if>
+        <if test="vo.modifyDate != null">
+            and modify_date = #{vo.modifyDate,javaType=DATE}
+        </if>
+    </update>
+    <update id="updateReviewerAutoAssign">
+        update t_interview i
+        inner join (select u.id as r_id
+        from t_interview i
+        left join t_user u on u.id = i.reviewer
+        left join t_user_role ur on
+        ur.user_id = u.id
+        left join t_role r on r.id = ur.role_id
+        where r.name =
+        #{roleName} and u.status = #{userStatus}
+        group by i.reviewer
+        having
+        count(i.reviewer) != 0
+        order by count(i.reviewer)
+        limit 1) t
+        set
+        i.reviewer = t.r_id,
+        <if test="newStatus != null">
+            i.status = #{newStatus},
+        </if>
+        i.modifyer = UUID_TO_BIN(#{userId}),
+        i.modify_date = NOW()
+        where i.id =
+        UUID_TO_BIN(#{id})
+        <if test="modifyDate == null">
+            and i.modify_date is null
+        </if>
+        <if test="modifyDate != null">
+            and i.modify_date = #{modifyDate,javaType=DATE}
+        </if>
+    </update>
+    <update id="updateByDtoSelective">
+        update t_interview
+        <set>
+            date = #{dto.date},
+            <if test="dto.reviewer != null and dto.reviewer != ''">
+                reviewer = UUID_TO_BIN(#{dto.reviewer}),
+            </if>
+            <if test="dto.reviewer == null or dto.reviewer == ''">
+                reviewer = null,
+            </if>
+            <if test="dto.interviewer1 != null and dto.interviewer1 != ''">
+                interviewer_1 = UUID_TO_BIN(#{dto.interviewer1}),
+            </if>
+            <if test="dto.interviewer1 == null or dto.interviewer1 == ''">
+                interviewer_1 = null,
+            </if>
+            <if test="dto.interviewer2 != null and dto.interviewer2 != ''">
+                interviewer_2 = UUID_TO_BIN(#{dto.interviewer2}),
+            </if>
+            <if test="dto.interviewer2 == null or dto.interviewer2 == ''">
+                interviewer_2 = null,
+            </if>
+            <if test="dto.interviewer3 != null and dto.interviewer3 != ''">
+                interviewer_3 = UUID_TO_BIN(#{dto.interviewer3}),
+            </if>
+            <if test="dto.interviewer3 == null or dto.interviewer3 == ''">
+                interviewer_3 = null,
+            </if>
+            <if test="dto.interviewer4 != null and dto.interviewer4 != ''">
+                interviewer_4 = UUID_TO_BIN(#{dto.interviewer4}),
+            </if>
+            <if test="dto.interviewer4 == null or dto.interviewer4 == ''">
+                interviewer_4 = null,
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            modifyer = UUID_TO_BIN(#{id}),
+            modify_date = NOW(),
+        </set>
+        where id = UUID_TO_BIN(#{dto.id})
+        <if test="dto.modifyDate == null">
+            and modify_date is null
+        </if>
+        <if test="dto.modifyDate != null">
+            and modify_date = #{dto.modifyDate,javaType=DATE}
+        </if>
+    </update>
+    <update id="updateStatusById">
+        update t_interview
+        <set>
+            <if test="interview.status != null">
+                status = #{interview.status,jdbcType=INTEGER},
+            </if>
+            modifyer = UUID_TO_BIN(#{id}),
+            modify_date = NOW(),
+        </set>
+        where id = UUID_TO_BIN(#{interview.id})
+        <if test="interview.modifyDate == null">
+            and modify_date is null
+        </if>
+        <if test="interview.modifyDate != null">
+            and modify_date = #{interview.modifyDate,javaType=DATE}
+        </if>
+    </update>
+
+</mapper>

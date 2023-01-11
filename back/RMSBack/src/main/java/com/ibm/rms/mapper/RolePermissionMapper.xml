@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.RolePermissionMapper">
+    <sql id="Base_Column_List">
+        id, role_id, permission_id
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as is, BIN_TO_UUID(role_id) as role_id, BIN_TO_UUID(permission_id) as permission_id
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.RolePermission">
+        select
+        <include refid="UUID_Column_List"/>
+        from t_role_permission
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_role_permission
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <delete id="deleteByRoleId">
+        delete
+        from t_role_permission
+        where role_id = UUID_TO_BIN(#{roleId})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.RolePermission">
+        insert into t_role_permission (id, role_id, permission_id)
+        values (UUID_TO_BIN(UUID(), true), UUID_TO_BIN(#{roleId}), UUID_TO_BIN(#{permissionId}))
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.RolePermission">
+        insert into t_role_permission
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="roleId != null">
+                role_id,
+            </if>
+            <if test="permissionId != null">
+                permission_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                UUID_TO_BIN(UUID(), true),
+            </if>
+            <if test="roleId != null">
+                UUID_TO_BIN(#{roleId}),
+            </if>
+            <if test="permissionId != null">
+                UUID_TO_BIN(#{permissionId}),
+            </if>
+        </trim>
+    </insert>
+    <insert id="insertSelectiveList">
+        insert into t_role_permission
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            role_id,
+            permission_id,
+        </trim>
+        values
+        <foreach item="item" index="index" collection="idList"
+                 separator=",">
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                UUID_TO_BIN(UUID(), true),
+                <if test="roleId != null">
+                    UUID_TO_BIN(#{roleId}),
+                </if>
+                <if test="item != null">
+                    UUID_TO_BIN(#{item}),
+                </if>
+            </trim>
+        </foreach>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.RolePermission">
+        update t_role_permission
+        <set>
+            <if test="roleId != null">
+                role_id = UUID_TO_BIN(#{roleId}),
+            </if>
+            <if test="permissionId != null">
+                permission_id = UUID_TO_BIN(#{permissionId}),
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>

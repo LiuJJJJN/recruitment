@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ibm.rms.mapper.RoleMapper">
+    <sql id="Base_Column_List">
+        id, name, comment
+    </sql>
+    <sql id="UUID_Column_List">
+        BIN_TO_UUID (id) as id, name, comment
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="String" resultType="com.ibm.rms.pojo.Role">
+        select
+            BIN_TO_UUID (id) as id,
+            concat(upper(substr(name, 6, 1)), substr(name, 7)) as name,
+            comment
+        from t_role
+        where id = UUID_TO_BIN(#{id})
+    </select>
+    <select id="selectAll" resultType="com.ibm.rms.pojo.Role">
+        select
+            BIN_TO_UUID (id) as id,
+            concat(upper(substr(name, 6, 1)), substr(name, 7)) as name,
+            comment
+        from t_role
+    </select>
+    <select id="selectAllByPageCondition" resultType="com.ibm.rms.pojo.Role">
+        select
+            BIN_TO_UUID (id) as id,
+            concat(upper(substr(name, 6, 1)), substr(name, 7)) as name,
+            comment
+        from t_role
+        limit #{pageNo}, #{pageSize}
+    </select>
+    <select id="countRoleTotalSize" resultType="java.lang.Long">
+        select count(*)
+        from t_role
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete
+        from t_role
+        where id = UUID_TO_BIN(#{id})
+    </delete>
+    <insert id="insert" parameterType="com.ibm.rms.pojo.Role">
+        insert into t_role (id, name, comment)
+        values (UUID_TO_BIN(UUID(), true), #{name,jdbcType=VARCHAR}, #{comment,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insertSelective" parameterType="com.ibm.rms.pojo.Role">
+        insert into t_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="name != null">
+                name,
+            </if>
+            <if test="comment != null">
+                comment,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            UUID_TO_BIN(UUID(), true),
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                #{comment,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.ibm.rms.pojo.Role">
+        update t_role
+        <set>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="comment != null">
+                comment = #{comment,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = UUID_TO_BIN(#{id})
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.ibm.rms.pojo.Role">
+        update t_role
+        set name    = #{name,jdbcType=VARCHAR},
+            comment = #{comment,jdbcType=VARCHAR}
+        where id = UUID_TO_BIN(#{id})
+    </update>
+</mapper>
